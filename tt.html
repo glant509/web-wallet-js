@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>动态添加 Box 示例</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f7f7f7;
+		}
+
+		.form-container {
+			max-width: 1800px;
+			margin: 30px auto;
+			padding: 20px;
+			border: 1px solid #ccc;
+			box-shadow: 0 0 10px #ccc;
+			background-color: #fff;
+            width: 1100px;
+		}
+
+		.box-container {
+			display: flex;
+			margin-top: 20px;
+		}
+
+		.box {
+			margin-right: 20px;
+			padding: 10px;
+			border: 1px solid #ccc;
+			background-color: #f9f9f9;
+		}
+
+		.box input[type="text"] {
+			margin-bottom: 5px;
+			padding: 5px;
+			border: 1px solid #ccc;
+		}
+
+		.box .delete-btn {
+			margin-top: 5px;
+			padding: 5px 10px;
+			border: none;
+			background-color: #ff0000;
+			color: #fff;
+			cursor: pointer;
+		}
+
+		.form-submit {
+			margin-top: 30px;
+			text-align: center;
+		}
+
+		.form-submit button[type="submit"] {
+			padding: 10px 20px;
+			border: none;
+			background-color: #0066cc;
+			color: #fff;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: bold;
+			transition: background-color 0.2s;
+		}
+
+        /* 样式表 */
+        .inputs-box, .outputs-box {
+            width: 520px;
+        }
+
+		.addr-text {
+            size: 70px;
+			background-color: #7caa893e;
+        }
+
+
+		.form-submit button[type="submit"]:hover {
+			background-color: #aadfeb;
+		}
+	</style>
+</head>
+
+
+<body>
+	<div class="form-container">
+		<h1>build tx</h1>
+		<form id="myForm">
+			<div class="box-container">
+				<!-- 左侧部分 -->
+				<fieldset>
+					<legend>Inputs</legend>
+					<button type="button" onclick="addBox('left-container')">Add input</button>
+					<div id="left-container" class="inputs-box"></div>
+				</fieldset>
+
+				<!-- 右侧部分 -->
+				<fieldset>
+					<legend>Outputs</legend>
+					<button type="button" onclick="addBox('right-container')">Add output</button>
+					<div id="right-container" class="outputs-box"></div>
+				</fieldset>
+			</div>
+
+			<div class="form-submit">
+				<!-- <button type="button" onclick="createAddress()">Submit</button> -->
+			</div>
+		</form>
+        <hr>
+        <h2>Response</h2>
+        <form>
+            <div id="response">
+				
+			</div>
+        </form>
+		<h2>Address</h2>
+		<form>
+            <div id="address">
+				<!-- <button type="button" onclick="createAddress()">Address</button> -->
+				<button type="button" onclick="generateBitcoinAddress()">fun</button>
+			</div>
+			<div>
+				<label for="address">Bitcoin Address:</label>
+				<input id="addrtext" type="text" class="addr-text" size="34">
+				<br>
+				<label for="address">privateKey:</label>
+				<input id="pritext" type="text" class="addr-text" size="80">
+				<br>
+				<label for="address">publicKey:</label>
+				<input id="pubtext" type="text" class="addr-text" size="80">
+			</div>
+        </form>
+	</div>
+
+	<!-- <script src="../scripts/bitcoinjs-lib.js"></script> -->
+	<!-- <script src="../scripts/bip32.js"></script> -->
+	<!-- <script src="../scripts/ecpair.js"></script> -->
+	
+	<script src="./core.js"></script>
+	<script src="./fun.js"></script>
+	<script>
+		function addBox(containerId) {
+			const container = document.querySelector('#' + containerId);
+
+			// 创建一个新的 box 元素
+			const box = document.createElement('div');
+			box.classList.add('box');
+
+			// 添加三个 input 元素：tx_hash、index、value
+			const txHashInput = document.createElement('input');
+			txHashInput.type = 'text';
+			txHashInput.placeholder = 'tx_hash';
+            txHashInput.maxlength = 68;
+            txHashInput.size = 70;
+			box.appendChild(txHashInput);
+
+			const indexInput = document.createElement('input');
+			indexInput.type = 'text';
+			indexInput.placeholder = 'index';
+			box.appendChild(indexInput);
+
+			const valueInput = document.createElement('input');
+			valueInput.type = 'text';
+			valueInput.placeholder = 'value';
+			box.appendChild(valueInput);
+
+			// 创建删除按钮并添加到 box 元素中
+			const deleteBtn = document.createElement('button');
+			deleteBtn.innerText = 'Delete';
+			deleteBtn.classList.add('delete-btn');
+			deleteBtn.addEventListener('click', () => {
+				box.remove();
+			});
+			box.appendChild(deleteBtn);
+
+			// 将 box 元素添加到容器中
+			container.appendChild(box);
+		}
+
+        const form = document.getElementById("myForm")
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();   // 阻止表单默认提交行为
+            // 在此处添加发送 HTTP POST 请求的代码，并在获取响应后进行日志记录
+            submitForm();
+        });
+
+		function submitForm() {
+			// 获取所有 Box 的数据
+		    const leftContainers = document.querySelectorAll('#left-container .box');
+		    const rightContainers = document.querySelectorAll('#right-container .box');
+
+		    const dataInputs = [];
+            const dataOutputs = [];
+
+		    leftContainers.forEach(container => {
+		        const txHashInput = container.querySelector('input:nth-of-type(1)');
+		        const indexInput = container.querySelector('input:nth-of-type(2)');
+		        const valueInput = container.querySelector('input:nth-of-type(3)');
+
+		        dataInputs.push({
+		            tx_hash: txHashInput.value,
+		            index: indexInput.value,
+		            value: valueInput.value,
+		            type: 'input'
+		        })
+		    });
+
+		    rightContainers.forEach(container => {
+		        const txHashInput = container.querySelector('input:nth-of-type(1)');
+		        const indexInput = container.querySelector('input:nth-of-type(2)');
+		        const valueInput = container.querySelector('input:nth-of-type(3)');
+
+		        dataOutputs.push({
+		            tx_hash: txHashInput.value,
+		            index: indexInput.value,
+		            value: valueInput.value,
+		            type: 'output'
+		        })
+		    });
+
+            data = new Object();
+            data.inputs = dataInputs;
+            data.outputs = dataOutputs;
+
+            const json = JSON.stringify(data);
+		    console.log("data: " + json);
+
+			// createAddress();
+
+            console.log("afrer address: ");
+
+
+            const res = document.getElementById("response")
+            res.innerText = json
+
+		    // 构建请求对象
+		    const requestOptions = {
+		        method: 'POST',
+		        headers: {
+		            'Content-Type': 'application/json'
+		        },
+		        body: JSON.stringify(data),
+		    };
+
+		    // 发送请求
+		    // fetch('http://localhost:8080', requestOptions)
+		    //     .then(response => response.json())
+		    //     .then(data => console.log(data))
+            //     .catch(error => console.log(error));
+		}
+
+        function validateInputs() {
+            const txHashPattern = /^[A-Fa-f0-9]{64}$/;
+            const indexPattern = /^[0-9]+$/;
+            const valuePattern = /^\d+(?:\.\d+)?$/;
+            const txHash = document.getElementById("box").value;
+            const index = parseInt(document.getElementById("index").value);
+            const value = parseFloat(document.getElementById("value").value);
+            if (!txHashPattern.test(txHash)) {
+                alert("Invalid tx_hash: Must be a 64-character hexadecimal string.");
+                return false;
+            }
+            if (!indexPattern.test(index)) {
+                alert("Invalid index: Must be a non-negative integer.");
+                return false;
+            }
+            if (!valuePattern.test(value)) {
+                alert("Invalid value: Must be a positive number.");
+                return false;
+            }
+            return true;
+        }
+
+		const addressButton = document.getElementById("address")
+		addressButton.addEventListener("click", function(event) {
+            event.preventDefault();   // 阻止表单默认提交行为
+            // 在此处添加发送 HTTP POST 请求的代码，并在获取响应后进行日志记录
+            submitForm();
+        });
+
+		function generateBitcoinAddress() {
+		const url = 'http://localhost:8089/address';
+		fetch(url)
+			.then(res => res.json())
+			.then(data => {
+				console.log(data);
+				const addrtext = document.getElementById("addrtext");
+				addrtext.value = data.address;
+				const pritext = document.getElementById("pritext");
+				pritext.value = data.privateKey;
+				const pubtext = document.getElementById("pubtext");
+				pubtext.value = data.publicKey;
+
+			});
+		}
+	</script>
+</body>
+
+</html>
